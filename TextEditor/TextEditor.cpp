@@ -10,7 +10,7 @@ typedef struct node{
 
 //node* resize(node* ptr, int new_size);
 node* resize();
-//void append(const char text[]);
+void append(const char text[]);
 void print_text();
 void clean_buffer();
 
@@ -20,24 +20,15 @@ node* last_char;
 int line_counter = 1;
 
 int main() {
-	//---
-	//node* p_first_chars;
-	//node* p_last_chars;
 
 	p_first_chars = (node*)calloc(arraysize, sizeof(node));
-	//p_last_chars = (node*)calloc(arraysize, sizeof(node));
-	//last_char.value = NULL;
-	//last_char.next = NULL;
 	for (int i = 0; i < arraysize; i++) {
 		node n;
-		//n.value = NULL;
-		//n.next = NULL;
 		p_first_chars[i] = n;
 	}
 
 	//---
 	last_char = p_first_chars;
-	//printf("'%c'\n", last_char.value);
 	printf("Hello User!\n");
 	char command;
 
@@ -49,14 +40,14 @@ int main() {
 		switch (command) {
 			case 'h': // Help 
 				printf(
-					"1 - Append text symbols to the end\n"
+					"1 - Append text symbols to the end\n" // done
 					"2 - Start the new line\n"
 					"3 - Use files to saving the information\n"
 					"4 - Use files to loading the information\n"
-					"5 - Print the current text to console\n"
+					"5 - Print the current text to console\n" // done
 					"6 - Insert the text by line and symbol index\n"
-					"7 - Search (please note that text can be found more than once)\n"
-					"e - Exit\n"
+					"7 - Search\n"
+					"e - Exit\n" // done
 				);
 				break;
 			case '1': // Append text symbols to the end 
@@ -72,31 +63,8 @@ int main() {
 					text[len - 1] = '\0';
 				}
 				text[len] = '\0';
-				len -= 1;
-				//append(text);
-				//---------
-				
-				node* nodes = (node*)calloc(len+1, sizeof(node));
-				bool execute_if = true;
-				for (int i = 0; i < len ; i++) {
-					node* cur_node_p;
-					if (last_char->value != NULL && i == 0 && execute_if) {
-						last_char->next = &nodes[i];
-						cur_node_p = last_char;
-						i--;
-						execute_if = false;
-						continue;
-					}
-					cur_node_p = &nodes[i];
-					cur_node_p->value = text[i];
-					
-					node* node_next_p = &nodes[i+1];
-					cur_node_p->next = (i != len - 1) ? node_next_p : NULL;
-					last_char = cur_node_p;
-					if (p_first_chars[line_counter-1].value == NULL && i == 0) 
-						p_first_chars[line_counter-1] = *cur_node_p;
-				}
-				//---------
+				//len -= 1;
+				append(text);
 				printf("\n");
 				printf("Done! Text to append:\n%s\n", text);
 				break;
@@ -165,21 +133,29 @@ node* resize() {
 	return ptr2;
 }
 
-//void append(const char text[]) {
-//	int len = strlen(text);
-//	node prev_node = last_char;
-//	for (int i = 0; i < len; i++) {
-//		node cur_node;
-//		cur_node.value = text[i];
-//		if (cur_node.value == NULL) i = len - 1;
-//		//prev_node.next = &cur_node;
-//		node* ptr = (node*)malloc(sizeof(node));
-//		ptr = &cur_node;
-//		prev_node.next = ptr;
-//		if (i == len - 1)
-//			last_char = cur_node;
-//	}
-//}
+void append(const char text[]) {
+	int len = strlen(text);
+	node* nodes = (node*)calloc(len + 1, sizeof(node));
+	bool execute_if = true;
+	for (int i = 0; i < len; i++) {
+		node* cur_node_p;
+		if (last_char->value != NULL && i == 0 && execute_if) {
+			last_char->next = &nodes[i];
+			cur_node_p = last_char;
+			i--;
+			execute_if = false;
+			continue;
+		}
+		cur_node_p = &nodes[i];
+		cur_node_p->value = text[i];
+
+		node* node_next_p = &nodes[i + 1];
+		cur_node_p->next = (i != len - 1) ? node_next_p : NULL;
+		last_char = cur_node_p;
+		if (p_first_chars[line_counter - 1].value == NULL && i == 0)
+			p_first_chars[line_counter - 1] = *cur_node_p;
+	}
+}
 
 void print_text() {
 	for (int i = 0; i < line_counter; i++) {
