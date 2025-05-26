@@ -45,7 +45,7 @@ int main() {
 					"1 - Append text symbols to the end\n" // done
 					"2 - Start the new line\n" // done
 					"3 - Use files to saving the information\n" // done
-					"4 - Use files to loading the information\n"
+					"4 - Use files to loading the information\n" // done
 					"5 - Print the current text to console\n" // done
 					"6 - Insert the text by line and symbol index\n"
 					"7 - Search\n"
