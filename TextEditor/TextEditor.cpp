@@ -9,28 +9,28 @@ typedef struct node{
 } node;
 
 //node* resize(node* ptr, int new_size);
-node* resize();
+node** resize();
 void append(const char text[]);
 void print_text();
 void print_text_in_file(FILE* fptr);
 void clean_buffer();
 
 int arraysize = 4;
-node* p_first_chars;
+node** p_first_chars;
 //node* p_last_chars;
 node* last_char;
 int line_counter = 1;
 
 int main() {
 
-	p_first_chars = (node*)calloc(arraysize, sizeof(node));
+	p_first_chars = (node**)calloc(arraysize, sizeof(node));
 	for (int i = 0; i < arraysize; i++) {
-		node n;
-		p_first_chars[i] = n;
+		//node* n;
+		p_first_chars[i] = NULL;
 	}
 
 	//---
-	last_char = p_first_chars;
+	last_char = p_first_chars[0];
 	printf("Hello User!\n");
 	char command;
 
@@ -44,7 +44,7 @@ int main() {
 				printf(
 					"1 - Append text symbols to the end\n" // done
 					"2 - Start the new line\n" // done
-					"3 - Use files to saving the information\n"
+					"3 - Use files to saving the information\n" // done
 					"4 - Use files to loading the information\n"
 					"5 - Print the current text to console\n" // done
 					"6 - Insert the text by line and symbol index\n"
@@ -85,10 +85,52 @@ int main() {
 				fopen_s(&fptr, "C:\\Dev\\KSE\\1 year\\Principles and Paradigms\\Assignments\\Simple Text Editor\\TextEditorResult.txt", "w");
 				print_text_in_file(fptr);
 				fclose(fptr);
+
+				printf("Text has been saved successfully!\n");
 				break;
 			case '4': // Use files to loading the information
-				printf("The command 4 is not implemented\n");
+			{
+
+				//printf("The command 4 is not implemented\n");
+				char fname[100];
+				printf(" Enter the file name for loading: ");
+				//clean_buffer();
+				while (getchar() != '\n');
+				fgets(fname, sizeof(char) * 100, stdin);
+				int fname_len = strlen(fname);
+				if (fname_len > 0 && fname[fname_len - 1] == '\n') {
+					fname[fname_len - 1] = '\0';
+				}
+				fname[fname_len] = '\0';
+
+				FILE* fptr;
+				if (fopen_s(&fptr, fname, "r") != 0) {
+					printf("Error: can not open file %s\n", fname);
+				}
+				else {
+					
+					char text[100];
+					while (fgets(text, 100, fptr) != NULL) {
+						append("\n");
+						line_counter++;
+
+						int len = strlen(text);
+						if (len > 0 && text[len - 1] == '\n') {
+							text[len - 1] = '\0';
+						}
+						text[len] = '\0';
+
+						append(text);
+
+					}
+
+
+					printf("\n");
+					printf("Text has been loaded successfully!\n");
+					fclose(fptr);
+				}
 				break;
+			}
 			case '5': // Print the current text to console 
 			{
 				//printf("The command 5 is not implemented\n");
@@ -122,22 +164,18 @@ int main() {
 	return 0;
 }
 
-//node* resize(node* ptr) {
-node* resize() {
-	//node* ptr2 = (node* )realloc(ptr, arraysize * sizeof(node*));
+node** resize() {
 	arraysize *= 2;
-	node* ptr2 = (node* )realloc(p_first_chars, arraysize * sizeof(node*));
+	node** ptr2 = (node** )realloc(p_first_chars, arraysize * sizeof(node));
 	return ptr2;
 }
 
 void append(const char text[]) {
 	int len = strlen(text);
 	node* nodes = (node*)calloc(len + 1, sizeof(node));
-	if (last_char->value != NULL) {
+	if (last_char != NULL && last_char->value != NULL) {
 		last_char->next = &nodes[0];
 	}
-	//if (len == 1 && p_first_chars[line_counter - 1].value != NULL && &p_first_chars[line_counter - 1] == last_char)
-	//	p_first_chars[line_counter - 1].next = &nodes[0];
 
 	for (int i = 0; i < len; i++) {
 		node* cur_node_p;
@@ -146,8 +184,8 @@ void append(const char text[]) {
 
 		node* node_next_p = &nodes[i + 1];
 		cur_node_p->next = (i != len - 1) ? node_next_p : NULL;
-		if (p_first_chars[line_counter - 1].value == NULL && i == 0)
-			p_first_chars[line_counter - 1] = *cur_node_p;
+		if (p_first_chars[line_counter - 1] == NULL || p_first_chars[line_counter - 1]->value == NULL)
+			p_first_chars[line_counter - 1] = cur_node_p;
 				
 
 		last_char = cur_node_p;
@@ -155,7 +193,7 @@ void append(const char text[]) {
 }
 
 void print_text() {
-	node cur_char = p_first_chars[0];
+	node cur_char = *p_first_chars[0];
 	while (cur_char.value != NULL) {
 		printf("%c", cur_char.value);
 		if (cur_char.next != NULL)
@@ -164,7 +202,7 @@ void print_text() {
 	}
 }
 void print_text_in_file(FILE * fptr) {
-	node cur_char = p_first_chars[0];
+	node cur_char = *p_first_chars[0];
 	while (cur_char.value != NULL) {
 		//printf("%c", cur_char.value);
 		fprintf(fptr, "%c", cur_char.value);
