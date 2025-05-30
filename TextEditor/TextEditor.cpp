@@ -26,6 +26,7 @@ class TextEditor {
 
 	public:
 		char copied_text[100];
+		char user_input[100];
 		TextEditor() {
 			p_first_chars = (node**)calloc(arraysize, sizeof(node));
 			for (int i = 0; i < arraysize; i++) {
@@ -48,8 +49,17 @@ class TextEditor {
 		}
 		//----------------------FUNCTIONS--------------------------------------------
 		
-		char get_input(const char text[]) {
-
+		void get_input(const char question[]) {
+			char text[100];
+			printf("%s", question);
+			while (getchar() != '\n');
+			fgets(text, sizeof(char) * 100, stdin);
+			int len = strlen(text);
+			if (len > 0 && text[len - 1] == '\n') {
+				text[len - 1] = '\0';
+			}
+			text[len] = '\0';
+			strcpy_s(user_input, text);
 		}
 
 		void append(const char text[]) {
@@ -81,8 +91,8 @@ class TextEditor {
 				p_first_chars = resize();
 		}
 
-		node* insert(const char text[], node* nd) {
-			int len = strlen(text);
+		node* insert(node* nd) {
+			int len = strlen(user_input);
 			node* nodes = (node*)calloc(len + 1, sizeof(node));
 			node* prev_node = nd;
 			node* node_after_insert = nd->next;
@@ -91,7 +101,7 @@ class TextEditor {
 			for (int i = 0; i < len; i++) {
 				node* cur_node_p;
 				cur_node_p = &nodes[i];
-				cur_node_p->value = text[i];
+				cur_node_p->value = user_input[i];
 
 				node* node_next_p = &nodes[i + 1];
 				cur_node_p->next = (i != len - 1) ? node_next_p : NULL;
@@ -102,13 +112,32 @@ class TextEditor {
 			return nd;
 		}
 
-		node* replace(const char text[], node* nd) {
-			int len = strlen(text);
-			node* prev_node = nd;
-			node* cur_node_p = prev_node->next;
+		void insert(int num_line) {
+			int len = strlen(user_input);
+			node* nodes = (node*)calloc(len + 1, sizeof(node));
+			node* last_node = p_first_chars[num_line];
+			node* node_after_insert = p_first_chars[num_line];
+			p_first_chars[num_line] = &nodes[0];
 
 			for (int i = 0; i < len; i++) {
-				cur_node_p->value = text[i];
+				node* cur_node_p;
+				cur_node_p = &nodes[i];
+				cur_node_p->value = user_input[i];
+
+				node* node_next_p = &nodes[i + 1];
+				cur_node_p->next = (i != len - 1) ? node_next_p : NULL;
+
+				last_node = cur_node_p;
+			}
+			last_node->next = node_after_insert;
+		}
+
+		node* replace(node* nd) { //+
+			int len = strlen(user_input);
+			node* cur_node_p = nd;
+
+			for (int i = 0; i < len; i++) {
+				cur_node_p->value = user_input[i];
 				cur_node_p = cur_node_p->next;
 			}
 			return nd;
@@ -161,16 +190,17 @@ class TextEditor {
 		}
 
 		node* paste(node* nd) {
-			nd = insert(copied_text, nd);
+			strcpy_s(user_input, copied_text);
+			nd = insert(nd);
 			return nd;
 		}
 
-		void search(const char text[]) {
+		void search() {
 			node cur_char = *p_first_chars[0];
 			int coord_arr_size = 4;
 			coordinates* coord_arr = (coordinates*)calloc(coord_arr_size, sizeof(coordinates));
 			int el_counter = 0;
-			int len_ = strlen(text);
+			int len_ = strlen(user_input);
 			int i = 0;
 			int cur_line_num = 0;
 			int cur_char_num = 0;
@@ -183,7 +213,7 @@ class TextEditor {
 					if (cur_char.next != NULL) cur_char = *cur_char.next;
 					continue;
 				}
-				if (cur_char.value == text[i]) {
+				if (cur_char.value == user_input[i]) {
 					if (i == 0) {
 						coord.char_num = cur_char_num;
 						coord.line_num = cur_line_num;
@@ -215,12 +245,43 @@ class TextEditor {
 		}
 
 		void print_text() {
+			if (p_first_chars[0] == NULL) {
+				printf("No text has been added yet.");
+				return;
+			}
+			printf("Your text:\n\n");
 			node cur_char = *p_first_chars[0];
 			while (cur_char.value != NULL) {
 				printf("%c", cur_char.value);
 				if (cur_char.next != NULL)
 					cur_char = *cur_char.next;
 				else break;
+			}
+		}
+
+		void load_from_file() {
+			FILE* fptr;
+			char fname[100];
+			strcpy_s(fname, user_input);
+			if (fopen_s(&fptr, fname, "r") != 0) {
+				printf("Error: can not open file %s\n", fname);
+			}
+			else {
+				char text[100];
+				while (fgets(text, 100, fptr) != NULL) {
+					new_line();
+
+					int len = strlen(text);
+					if (len > 0 && text[len - 1] == '\n') {
+						text[len - 1] = '\0';
+					}
+					text[len] = '\0';
+					append(text);
+				}
+				printf("\n");
+				printf("Text has been loaded successfully!\n");
+				fclose(fptr);
+				fptr = NULL;
 			}
 		}
 
@@ -305,18 +366,11 @@ int main() {
 				break;
 			case 1: // Append text symbols to the end 
 			{
-				char text[100];
-				printf("Write text to append (up to 100 characters):\n\n");
-				while (getchar() != '\n');
-				fgets(text, sizeof(char)*100, stdin);
-				int len = strlen(text);
-				if (len > 0 && text[len - 1] == '\n') {
-					text[len - 1] = '\0';
-				}
-				text[len] = '\0';
-				text_editor.append(text);
+				text_editor.get_input("Write text to append (up to 100 characters):\n\n");
+				text_editor.append(text_editor.user_input);
 				printf("\n");
-				printf("Done! Text to append:\n%s\n", text);
+				//printf("Done! Text to append:\n%s\n", text);
+				printf("Done! Text to append:\n%s\n", text_editor.user_input);
 				break;
 			}
 			case 2: // Start the new line
@@ -335,52 +389,14 @@ int main() {
 				break;
 			case 4: // Use files to loading the information
 			{
-				char fname[100];
-				printf(" Enter the file name for loading: ");
-				//clean_buffer();
-				while (getchar() != '\n');
-				fgets(fname, sizeof(char) * 100, stdin);
-				int fname_len = strlen(fname);
-				if (fname_len > 0 && fname[fname_len - 1] == '\n') {
-					fname[fname_len - 1] = '\0';
-				}
-				fname[fname_len] = '\0';
-
-				FILE* fptr;
-				if (fopen_s(&fptr, fname, "r") != 0) {
-					printf("Error: can not open file %s\n", fname);
-				}
-				else {
-					
-					char text[100];
-					while (fgets(text, 100, fptr) != NULL) {
-						text_editor.new_line();
-
-						int len = strlen(text);
-						if (len > 0 && text[len - 1] == '\n') {
-							text[len - 1] = '\0';
-						}
-						text[len] = '\0';
-
-						text_editor.append(text);
-
-					}
-					printf("\n");
-					printf("Text has been loaded successfully!\n");
-					fclose(fptr);
-					free(fptr);
-					fptr = NULL;
-				}
+				text_editor.get_input("Enter the file name for loading: ");
+				text_editor.load_from_file();
 				break;
 			}
 			case 5: // Print the current text to console 
-			{
-				printf("Your text:\n\n");
 				text_editor.print_text();
 				printf("\n\n");
-
 				break;
-			}
 				
 			case 6: // Insert the text by line and symbol index
 			{
@@ -390,36 +406,22 @@ int main() {
 				scanf_s("%d %d", &line_num, &char_num);
 				printf("\n");
 
-				node* node_before_insert = text_editor.find_char(line_num, char_num);
-				if (node_before_insert == NULL) break;
+				node* node_where_insert = text_editor.find_char(line_num, char_num);
+				if (node_where_insert == NULL) break;
 
-				char text[100];
-				printf("Enter text to insert (up to 100 characters):\n\n");
-				while (getchar() != '\n');
-				fgets(text, sizeof(char) * 100, stdin);
-				int len = strlen(text);
-				if (len > 0 && text[len - 1] == '\n') {
-					text[len - 1] = '\0';
-				}
-				text[len] = '\0';
+				text_editor.get_input("Enter text to insert (up to 100 characters):\n\n");
 
-				text_editor.insert(text, node_before_insert);
-
+				if (char_num == 0)
+					text_editor.insert(line_num);
+				else 
+					text_editor.insert(node_where_insert);
+				
 				break;
 			}
 			case 7: // Search (please note that text can be found more than once)
 			{
-				char text[100];
-				printf("Enter text to search: ");
-				while (getchar() != '\n');
-				fgets(text, sizeof(char) * 100, stdin);
-				int len = strlen(text);
-				if (len > 0 && text[len - 1] == '\n') {
-					text[len - 1] = '\0';
-				}
-				text[len] = '\0';
-	
-				text_editor.search(text);
+				text_editor.get_input("Enter text to search: ");
+				text_editor.search();
 				break;
 			}
 			case 8: // Delete
@@ -441,10 +443,12 @@ int main() {
 			}
 			case 9: // Undo
 			{
+				printf("The command 9 is not implemented\n");
 				break;
 			}
 			case 10: // Redo
 			{
+				printf("The command 10 is not implemented\n");
 				break;
 			}
 			case 11: // Cut
@@ -504,19 +508,11 @@ int main() {
 				scanf_s("%d %d", &line_num, &char_num);
 				printf("\n");
 
-				node* node_before_replace = text_editor.find_char(line_num, char_num);
-				if (node_before_replace == NULL) break;
-				char text[100];
-				printf("Enter text to replace (up to 100 characters):\n\n");
-				while (getchar() != '\n');
-				fgets(text, sizeof(char) * 100, stdin);
-				int len = strlen(text);
-				if (len > 0 && text[len - 1] == '\n') {
-					text[len - 1] = '\0';
-				}
-				text[len] = '\0';
-				//node_before_insert = text_editor.insert(text, node_before_insert);
-				text_editor.replace(text, node_before_replace);
+				node* node_start_replacement = text_editor.find_char(line_num, char_num);
+				if (node_start_replacement == NULL) break;
+
+				text_editor.get_input("Enter text to replace (up to 100 characters):\n\n");
+				text_editor.replace(node_start_replacement);
 
 				break;
 			}
