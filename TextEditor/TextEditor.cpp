@@ -25,6 +25,7 @@ class TextEditor {
 	int line_counter = 0;
 
 	public:
+		char copied_text[100];
 		TextEditor() {
 			p_first_chars = (node**)calloc(arraysize, sizeof(node));
 			for (int i = 0; i < arraysize; i++) {
@@ -100,7 +101,70 @@ class TextEditor {
 			prev_node->next = node_after_insert;
 			return nd;
 		}
-		 
+
+		node* replace(const char text[], node* nd) {
+			int len = strlen(text);
+			node* prev_node = nd;
+			node* cur_node_p = prev_node->next;
+
+			for (int i = 0; i < len; i++) {
+				cur_node_p->value = text[i];
+				cur_node_p = cur_node_p->next;
+			}
+			return nd;
+		}
+
+		node* delete_(node* nd, int num_of_symb) {
+			node* node_before = nd;
+			node* cur_node_p = node_before->next;
+
+			for (int i = 0; i < num_of_symb; i++) {
+				cur_node_p = cur_node_p->next;
+			}
+			node_before->next = cur_node_p;
+			return node_before;
+		}
+
+		void copy(node* nd, int num_of_symb) {
+			char text[100];
+			node* node_before = nd;
+			node* cur_node_p = node_before->next;
+
+			for (int i = 0; i < num_of_symb; i++) {
+				if (cur_node_p == NULL) {
+					text[i] = '\0';
+					break;
+				}
+				text[i] = cur_node_p->value;
+				cur_node_p = cur_node_p->next;
+			}
+			strcpy_s(copied_text, text);			
+		}
+
+		node* cut(node* nd, int num_of_symb) {
+			char text[100];
+			node* node_before = nd;
+			node* cur_node_p = node_before->next;
+			text[num_of_symb] = '\0';
+			for (int i = 0; i < num_of_symb; i++) {
+				if (cur_node_p == NULL) {
+					text[i] = '\0';
+					break;
+				}
+				text[i] = cur_node_p->value;
+				cur_node_p = cur_node_p->next;
+			}
+
+			strcpy_s(copied_text, text);
+			node_before->next = cur_node_p;
+			return node_before;
+		}
+
+		node* paste(node* nd) {
+			nd = insert(copied_text, nd);
+			return nd;
+		}
+
 		void search(const char text[]) {
 			node cur_char = *p_first_chars[0];
 			int coord_arr_size = 4;
@@ -159,6 +223,7 @@ class TextEditor {
 				else break;
 			}
 		}
+
 		void print_text_in_file(FILE* fptr) {
 			node cur_char = *p_first_chars[0];
 			while (cur_char.value != NULL) {
@@ -175,6 +240,7 @@ class TextEditor {
 			getchar();
 
 		}
+
 		node* find_char(int line_num, int char_num) {
 			if (line_num > line_counter) {
 				printf("Error, this line does not exist yet. ");
@@ -207,28 +273,37 @@ class TextEditor {
 
 int main() {
 	printf("Hello User!\n");
-	char command;
+	int command;
+	//char command;
 	TextEditor text_editor;
 
 	while (1) {
-		printf("Choose the command (press 'h' for help) : ");
-		scanf_s(" %c", &command, 1);
+		printf("Choose the command (press '0' for help) : ");
+		//scanf_s(" %c", &command, 2);
+		cin >> command;
 		printf("\n");
 
 		switch (command) {
-			case 'h': // Help 
+			case 0: // Help 
 				printf(
-					"1 - Append text symbols to the end\n" // done
-					"2 - Start the new line\n" // done
-					"3 - Use files to saving the information\n" // done
-					"4 - Use files to loading the information\n" // done
-					"5 - Print the current text to console\n" // done
-					"6 - Insert the text by line and symbol index\n" // done
-					"7 - Search\n" // done
-					"e - Exit\n" // done
+					" 1 - Append text symbols to the end\n" // done
+					" 2 - Start the new line\n" // done
+					" 3 - Use files to saving the information\n" // done
+					" 4 - Use files to loading the information\n" // done
+					" 5 - Print the current text to console\n" // done
+					" 6 - Insert the text by line and symbol index\n" // done
+					" 7 - Search\n" // done
+					" 8 - Delete\n" 
+					" 9 - Undo\n" 
+					"10 - Redo\n" 
+					"11 - Cut\n" 
+					"12 - Paste\n"
+					"13 - Copy\n"
+					"14 - Insert with replacement\n" 
+					"-1 - Exit\n" 
 				);
 				break;
-			case '1': // Append text symbols to the end 
+			case 1: // Append text symbols to the end 
 			{
 				char text[100];
 				printf("Write text to append (up to 100 characters):\n\n");
@@ -244,11 +319,11 @@ int main() {
 				printf("Done! Text to append:\n%s\n", text);
 				break;
 			}
-			case '2': // Start the new line
+			case 2: // Start the new line
 				text_editor.new_line();
-				printf("Done!\n");
+				printf("New line has been added!\n");
 				break;
-			case '3': // Use files to saving the information
+			case 3: // Use files to saving the information
 				FILE * fptr;
 				fopen_s(&fptr, "C:\\Dev\\KSE\\1 year\\Principles and Paradigms\\Assignments\\Simple Text Editor\\TextEditorResult.txt", "w");
 				text_editor.print_text_in_file(fptr);
@@ -258,7 +333,7 @@ int main() {
 
 				printf("Text has been saved successfully!\n");
 				break;
-			case '4': // Use files to loading the information
+			case 4: // Use files to loading the information
 			{
 				char fname[100];
 				printf(" Enter the file name for loading: ");
@@ -298,7 +373,7 @@ int main() {
 				}
 				break;
 			}
-			case '5': // Print the current text to console 
+			case 5: // Print the current text to console 
 			{
 				printf("Your text:\n\n");
 				text_editor.print_text();
@@ -307,16 +382,17 @@ int main() {
 				break;
 			}
 				
-			case '6': // Insert the text by line and symbol index
+			case 6: // Insert the text by line and symbol index
 			{
 				int line_num;
 				int char_num;
-				printf(" Choose line and index: ");
+				printf("Insert\nChoose line and index: ");
 				scanf_s("%d %d", &line_num, &char_num);
 				printf("\n");
 
 				node* node_before_insert = text_editor.find_char(line_num, char_num);
 				if (node_before_insert == NULL) break;
+
 				char text[100];
 				printf("Enter text to insert (up to 100 characters):\n\n");
 				while (getchar() != '\n');
@@ -326,12 +402,12 @@ int main() {
 					text[len - 1] = '\0';
 				}
 				text[len] = '\0';
-				//node_before_insert = text_editor.insert(text, node_before_insert);
+
 				text_editor.insert(text, node_before_insert);
 
 				break;
 			}
-			case '7': // Search (please note that text can be found more than once)
+			case 7: // Search (please note that text can be found more than once)
 			{
 				char text[100];
 				printf("Enter text to search: ");
@@ -346,15 +422,114 @@ int main() {
 				text_editor.search(text);
 				break;
 			}
-			case 'e':
+			case 8: // Delete
+			{
+				int line_num;
+				int char_num;
+				int num_of_symb;
+				printf("Delete\nChoose line, index and number of symbols: ");
+				scanf_s("%d %d %d", &line_num, &char_num, &num_of_symb);
+				printf("\n");
+
+				node* node_before_del = text_editor.find_char(line_num, char_num);
+				if (node_before_del == NULL) break;
+
+				text_editor.delete_(node_before_del, num_of_symb);
+				printf("Done!\n");
+
+				break;
+			}
+			case 9: // Undo
+			{
+				break;
+			}
+			case 10: // Redo
+			{
+				break;
+			}
+			case 11: // Cut
+			{
+				int line_num;
+				int char_num;
+				int num_of_symb;
+				printf("Cut\nChoose line, index and number of symbols: ");
+				scanf_s("%d %d %d", &line_num, &char_num, &num_of_symb);
+				printf("\n");
+
+				node* node_before_cut = text_editor.find_char(line_num, char_num);
+				if (node_before_cut == NULL) break;
+
+				text_editor.cut(node_before_cut, num_of_symb);
+				printf("Done!\n");
+
+				break;
+			}
+			case 12: // Paste
+			{
+				int line_num;
+				int char_num;
+				printf("Paste\nChoose line and index: ");
+				scanf_s("%d %d", &line_num, &char_num);
+				printf("\n");
+				node* node_before_paste = text_editor.find_char(line_num, char_num);
+				if (node_before_paste == NULL) break;
+
+				text_editor.paste(node_before_paste);
+				printf("Done!\n");
+
+				break;
+			}
+			case 13: // Copy 
+			{
+				int line_num;
+				int char_num;
+				int num_of_symb;
+				printf("Copy\nChoose line, index and number of symbols: ");
+				scanf_s("%d %d %d", &line_num, &char_num, &num_of_symb);
+				printf("\n");
+
+				node* node_before_copy = text_editor.find_char(line_num, char_num);
+				if (node_before_copy == NULL) break;
+
+				text_editor.copy(node_before_copy, num_of_symb);
+				printf("Done!\n");
+				
+				break;
+			}
+			case 14: // Insert with replacement 
+			{
+				int line_num;
+				int char_num;
+				printf("Replace\nChoose line and index: ");
+				scanf_s("%d %d", &line_num, &char_num);
+				printf("\n");
+
+				node* node_before_replace = text_editor.find_char(line_num, char_num);
+				if (node_before_replace == NULL) break;
+				char text[100];
+				printf("Enter text to replace (up to 100 characters):\n\n");
+				while (getchar() != '\n');
+				fgets(text, sizeof(char) * 100, stdin);
+				int len = strlen(text);
+				if (len > 0 && text[len - 1] == '\n') {
+					text[len - 1] = '\0';
+				}
+				text[len] = '\0';
+				//node_before_insert = text_editor.insert(text, node_before_insert);
+				text_editor.replace(text, node_before_replace);
+
+				break;
+			}
+			case -1:
 				return 0;
 			default:
-				printf("Error! The command '%c' does not exist.\n", command);
+				printf("Error! The command '%d' does not exist.\n", command);
+				break;
 		}
 		printf("\nPress enter to continue... ");
-		//while (getchar() != '\n');
-		//getchar();
-		text_editor.clean_buffer();
+		while (getchar() != '\n');
+		getchar();
+		//text_editor.clean_buffer();
 		system("cls");
 		//while (getchar() != '\n');
 	}
