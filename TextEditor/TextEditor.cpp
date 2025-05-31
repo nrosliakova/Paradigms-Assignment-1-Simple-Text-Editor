@@ -149,7 +149,7 @@ class TextEditor {
 			last_node->next = node_after_insert;
 		}
 
-		node* replace(node* nd) { //+
+		node* replace(node* nd) {
 			int len = strlen(user_input);
 			node* cur_node_p = nd;
 
@@ -246,7 +246,6 @@ class TextEditor {
 			return p_first_chars[num_line];
 		}
 
-		//node* paste(node* nd) {
 		void paste(int num_line, int num_char) {
 			if (num_line > line_counter) {
 				printf("Error, this line does not exist yet. ");
@@ -394,6 +393,7 @@ int main() {
 
 		switch (command) {
 			case 0: // Help 
+			{
 				printf(
 					" 1 - Append text symbols to the end\n" // done
 					" 2 - Start the new line\n" // done
@@ -402,16 +402,17 @@ int main() {
 					" 5 - Print the current text to console\n" // done
 					" 6 - Insert the text by line and symbol index\n" // done
 					" 7 - Search\n" // done
-					" 8 - Delete\n" 
+					" 8 - Delete\n" // done
 					" 9 - Undo\n" 
 					"10 - Redo\n" 
-					"11 - Cut\n" 
-					"12 - Paste\n"
-					"13 - Copy\n"
-					"14 - Insert with replacement\n" 
+					"11 - Cut\n" // done
+					"12 - Paste\n" // done
+					"13 - Copy\n" // done
+					"14 - Insert with replacement\n" // done
 					"-1 - Exit\n" 
 				);
 				break;
+			}
 			case 1: // Append text symbols to the end 
 			{
 				text_editor.get_input("Write text to append (up to 100 characters):\n\n");
@@ -422,10 +423,13 @@ int main() {
 				break;
 			}
 			case 2: // Start the new line
+			{
 				text_editor.new_line();
 				printf("New line has been added!\n");
 				break;
+			}
 			case 3: // Use files to saving the information
+			{
 				FILE * fptr;
 				fopen_s(&fptr, "C:\\Dev\\KSE\\1 year\\Principles and Paradigms\\Assignments\\Simple Text Editor\\TextEditorResult.txt", "w");
 				text_editor.print_text_in_file(fptr);
@@ -435,6 +439,7 @@ int main() {
 
 				printf("Text has been saved successfully!\n");
 				break;
+			}
 			case 4: // Use files to loading the information
 			{
 				text_editor.get_input("Enter the file name for loading: ");
@@ -442,10 +447,11 @@ int main() {
 				break;
 			}
 			case 5: // Print the current text to console 
+			{
 				text_editor.print_text();
 				printf("\n\n");
-				break;
-				
+				break;				
+			}
 			case 6: // Insert the text by line and symbol index
 			{
 				int line_num;
