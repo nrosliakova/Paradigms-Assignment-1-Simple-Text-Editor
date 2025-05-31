@@ -91,6 +91,23 @@ class TextEditor {
 				p_first_chars = resize();
 		}
 
+		node* find_char(int line_num, int char_num) {
+			if (line_num > line_counter) {
+				printf("Error, this line does not exist yet. ");
+				return NULL;
+			}
+			node* nod = p_first_chars[line_num];
+			bool error_occurred = false;
+			for (int i = 1; i <= char_num; i++) {
+				if (nod->next == NULL) {
+					printf("Error, this character number does not exist yet. Last character number is %d.", i);
+					return NULL;
+				}
+				nod = nod->next;
+			}
+			return nod;
+		}
+
 		node* insert(node* nd) {
 			int len = strlen(user_input);
 			node* nodes = (node*)calloc(len + 1, sizeof(node));
@@ -143,8 +160,7 @@ class TextEditor {
 			return nd;
 		}
 
-		node* delete_(node* nd, int num_of_symb) {
-			node* node_before = nd;
+		node* delete_(node* node_before, int num_of_symb) {
 			node* cur_node_p = node_before->next;
 
 			for (int i = 0; i < num_of_symb; i++) {
@@ -154,10 +170,27 @@ class TextEditor {
 			return node_before;
 		}
 
+		node* delete_(int num_line, int num_of_symb) {
+			if (num_line > line_counter) {
+				printf("Error, this line does not exist yet. ");
+				return NULL;
+			}
+			node* cur_node_p = p_first_chars[num_line];
+
+			for (int i = 0; i < num_of_symb; i++) {
+				if (cur_node_p == NULL) break;
+				cur_node_p = cur_node_p->next;
+			}
+			p_first_chars[num_line] = cur_node_p;
+			return p_first_chars[num_line];
+		}
+
 		void copy(node* nd, int num_of_symb) {
 			char text[100];
-			node* node_before = nd;
-			node* cur_node_p = node_before->next;
+			//node* node_before = nd;
+			//node* cur_node_p = node_before->next;
+			node* cur_node_p = nd;
+			text[num_of_symb] = '\0';
 
 			for (int i = 0; i < num_of_symb; i++) {
 				if (cur_node_p == NULL) {
@@ -170,9 +203,9 @@ class TextEditor {
 			strcpy_s(copied_text, text);			
 		}
 
-		node* cut(node* nd, int num_of_symb) {
+		node* cut(node* node_before, int num_of_symb) {
 			char text[100];
-			node* node_before = nd;
+			//node* node_before = nd;
 			node* cur_node_p = node_before->next;
 			text[num_of_symb] = '\0';
 			for (int i = 0; i < num_of_symb; i++) {
@@ -189,10 +222,41 @@ class TextEditor {
 			return node_before;
 		}
 
-		node* paste(node* nd) {
+		node* cut(int num_line, int num_of_symb) {
+			if (num_line > line_counter) {
+				printf("Error, this line does not exist yet. ");
+				return NULL;
+			}
+			char text[100];
+			//node* node_before = nd;
+			node* cur_node_p = p_first_chars[num_line];
+			text[num_of_symb] = '\0';
+			for (int i = 0; i < num_of_symb; i++) {
+				if (cur_node_p == NULL) {
+					text[i] = '\0';
+					break;
+				}
+				text[i] = cur_node_p->value;
+				cur_node_p = cur_node_p->next;
+			}
+
+			strcpy_s(copied_text, text);
+			//node_before->next = cur_node_p;
+			p_first_chars[num_line] = cur_node_p;
+			return p_first_chars[num_line];
+		}
+
+		//node* paste(node* nd) {
+		void paste(int num_line, int num_char) {
+			if (num_line > line_counter) {
+				printf("Error, this line does not exist yet. ");
+				return;
+			}
 			strcpy_s(user_input, copied_text);
-			nd = insert(nd);
-			return nd;
+			if(num_line != 0)
+				insert(find_char(num_line, num_char));
+			else 
+				insert(num_line);
 		}
 
 		void search() {
@@ -302,23 +366,7 @@ class TextEditor {
 
 		}
 
-		node* find_char(int line_num, int char_num) {
-			if (line_num > line_counter) {
-				printf("Error, this line does not exist yet. ");
-				//return false;
-				return NULL;
-			}
-			node* nod = p_first_chars[line_num];
-			bool error_occurred = false;
-			for (int i = 1; i <= char_num; i++) {
-				if (nod->next == NULL) {
-					printf("Error, this character number does not exist yet. Last character number is %d.", i);
-					return NULL;
-				}
-				nod = nod->next;
-			}
-			return nod;
-		}
+		
 	private:
 		node** resize() {
 			arraysize *= 2;
@@ -432,12 +480,15 @@ int main() {
 				printf("Delete\nChoose line, index and number of symbols: ");
 				scanf_s("%d %d %d", &line_num, &char_num, &num_of_symb);
 				printf("\n");
+								
+				if (char_num != 0) {
+					node* node_before_del = text_editor.find_char(line_num, char_num - 1);
+					if (node_before_del == NULL) break;
+					text_editor.delete_(node_before_del, num_of_symb);
+				}
+				else text_editor.delete_(char_num, num_of_symb);
 
-				node* node_before_del = text_editor.find_char(line_num, char_num);
-				if (node_before_del == NULL) break;
-
-				text_editor.delete_(node_before_del, num_of_symb);
-				printf("Done!\n");
+				//printf("Done!\n");
 
 				break;
 			}
@@ -460,11 +511,12 @@ int main() {
 				scanf_s("%d %d %d", &line_num, &char_num, &num_of_symb);
 				printf("\n");
 
-				node* node_before_cut = text_editor.find_char(line_num, char_num);
-				if (node_before_cut == NULL) break;
-
-				text_editor.cut(node_before_cut, num_of_symb);
-				printf("Done!\n");
+				if (char_num != 0) {
+					node* node_before_cut = text_editor.find_char(line_num, char_num - 1);
+					if (node_before_cut == NULL) break;
+					text_editor.cut(node_before_cut, num_of_symb);
+				}
+				else text_editor.cut(char_num, num_of_symb);
 
 				break;
 			}
@@ -475,10 +527,8 @@ int main() {
 				printf("Paste\nChoose line and index: ");
 				scanf_s("%d %d", &line_num, &char_num);
 				printf("\n");
-				node* node_before_paste = text_editor.find_char(line_num, char_num);
-				if (node_before_paste == NULL) break;
 
-				text_editor.paste(node_before_paste);
+				text_editor.paste(line_num, char_num);
 				printf("Done!\n");
 
 				break;
@@ -492,10 +542,10 @@ int main() {
 				scanf_s("%d %d %d", &line_num, &char_num, &num_of_symb);
 				printf("\n");
 
-				node* node_before_copy = text_editor.find_char(line_num, char_num);
-				if (node_before_copy == NULL) break;
+				node* node_to_copy = text_editor.find_char(line_num, char_num);
+				if (node_to_copy == NULL) break;
 
-				text_editor.copy(node_before_copy, num_of_symb);
+				text_editor.copy(node_to_copy, num_of_symb);
 				printf("Done!\n");
 				
 				break;
