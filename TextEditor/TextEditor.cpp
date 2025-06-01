@@ -1,7 +1,4 @@
-//#include <stdio.h>
-//#include <stdlib.h>
-//#include <string.h>
-//-- c++
+
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -21,15 +18,16 @@ typedef struct coordinates{
 class TextEditor {
 	int arraysize = 4;
 	node** p_first_chars;
-	//node* p_last_chars;
 	node* last_char;
 	int line_counter = 0;
 	stack<char*> before;
 	stack<char*> after; 
 	int chars_counter = 0;
+
 	public:
 		char copied_text[100];
 		char user_input[100];
+
 		TextEditor() {
 			p_first_chars = (node**)calloc(arraysize, sizeof(node));
 			for (int i = 0; i < arraysize; i++) {
@@ -37,20 +35,16 @@ class TextEditor {
 			}
 
 			last_char = p_first_chars[0];
+			char* text = get_text();
+			before.push(text);
 		}
+
 		~TextEditor() {
-			/*node* cur_char = p_first_chars[0];
-			while (cur_char != NULL) {
-				node* next_char = cur_char->next;
-				free(cur_char);
-				cur_char = next_char;
-			}
-			free(p_first_chars);
+			free_stacks();
+			delete p_first_chars;
 			p_first_chars = NULL;
-			free(last_char);
-			last_char = NULL;*/
+			last_char = NULL;
 		}
-		//----------------------FUNCTIONS--------------------------------------------
 		
 		void get_input(const char question[]) {
 			char text[100];
@@ -85,6 +79,7 @@ class TextEditor {
 			text[i] = '\0';
 			return text;
 		}
+
 		void append(const char text[]) {
 			int len = strlen(text);
 			chars_counter += len;
@@ -111,19 +106,17 @@ class TextEditor {
 		void add_to_stack() {
 			char* text = get_text();
 			before.push(text);
-			//before_count++;
 
-			//while (after_count != 0) {
 			while (after.size() != 0) {
+				char* t = after.top();
+				delete t;
 				after.pop();
-				//after_count--;
 			}		
 		}
 
 		void new_line() {
 			append("\n");
 			line_counter++;
-			//chars_counter++;
 			if (line_counter > arraysize)
 				p_first_chars = resize();
 		}
@@ -188,21 +181,6 @@ class TextEditor {
 			last_node->next = node_after_insert;
 		}
 
-		/*node* replace(node* nd) {
-			int len = strlen(user_input);
-			node* cur_node_p = nd;
-			node* prev_node_p = nd;
-			for (int i = 0; i < len; i++) {
-				if (cur_node_p == NULL) {
-					cur_node_p = (node*)malloc(sizeof(node));
-					prev_node_p->next = cur_node_p;
-				}
-				cur_node_p->value = user_input[i];
-				prev_node_p = cur_node_p;
-				cur_node_p = cur_node_p->next;
-			}
-			return nd;
-		}*/
 		void replace(int num_line, int num_char) {
 			int num_of_symb = strlen(user_input);
 
@@ -256,8 +234,6 @@ class TextEditor {
 
 		void copy(node* nd, int num_of_symb) {
 			char text[100];
-			//node* node_before = nd;
-			//node* cur_node_p = node_before->next;
 			node* cur_node_p = nd;
 			text[num_of_symb] = '\0';
 
@@ -274,7 +250,6 @@ class TextEditor {
 
 		node* cut(node* node_before, int num_of_symb) {
 			char text[100];
-			//node* node_before = nd;
 			node* cur_node_p = node_before->next;
 			text[num_of_symb] = '\0';
 			for (int i = 0; i < num_of_symb; i++) {
@@ -298,7 +273,6 @@ class TextEditor {
 				return NULL;
 			}
 			char text[100];
-			//node* node_before = nd;
 			node* cur_node_p = p_first_chars[num_line];
 			text[num_of_symb] = '\0';
 			for (int i = 0; i < num_of_symb; i++) {
@@ -312,7 +286,6 @@ class TextEditor {
 			}
 
 			strcpy_s(copied_text, text);
-			//node_before->next = cur_node_p;
 			p_first_chars[num_line] = cur_node_p;
 			return p_first_chars[num_line];
 		}
@@ -370,6 +343,8 @@ class TextEditor {
 					cur_char_num++;
 				}
 				else break;
+				delete coord_arr;
+				coord_arr = NULL;
 			}
 			printf("\nText is present in positions (%d results): \n\n", el_counter);
 			printf("\tline\tchar\n");
@@ -422,7 +397,6 @@ class TextEditor {
 		void print_text_in_file(FILE* fptr) {
 			node cur_char = *p_first_chars[0];
 			while (cur_char.value != NULL) {
-				//printf("%c", cur_char.value);
 				fprintf(fptr, "%c", cur_char.value);
 				if (cur_char.next != NULL)
 					cur_char = *cur_char.next;
@@ -440,13 +414,13 @@ class TextEditor {
 			delete_all();
 			append(text);
 		}
+
 		void redo() {
 			if (after.empty()) return;
 
 			char* text = after.top();
 			after.pop();
 			before.push(text);
-			//text = before.top();
 
 			delete_all();
 			append(text);
@@ -460,6 +434,16 @@ class TextEditor {
 
 		
 	private:
+		void free_stacks() {
+			while (!before.empty()) {
+				char* t = before.top();
+				before.pop();
+			}
+			while (!after.empty()) {
+				char* t = after.top();
+				after.pop();
+			}
+		}
 		node** resize() {
 			arraysize *= 2;
 			node** ptr2 = (node**)realloc(p_first_chars, arraysize * sizeof(node));
@@ -480,7 +464,6 @@ int main() {
 
 	while (1) {
 		printf("Choose the command (press '0' for help) : ");
-		//scanf_s(" %c", &command, 2);
 		cin >> command;
 		printf("\n");
 
@@ -496,8 +479,8 @@ int main() {
 					" 6 - Insert the text by line and symbol index\n" // done
 					" 7 - Search\n" // done
 					" 8 - Delete\n" // done
-					" 9 - Undo\n" 
-					"10 - Redo\n" 
+					" 9 - Undo\n" // done
+					"10 - Redo\n" // done
 					"11 - Cut\n" // done
 					"12 - Paste\n" // done
 					"13 - Copy\n" // done
@@ -511,7 +494,6 @@ int main() {
 				text_editor.get_input("Write text to append (up to 100 characters):\n\n");
 				text_editor.append(text_editor.user_input);
 				printf("\n");
-				//printf("Done! Text to append:\n%s\n", text);
 				printf("Done! Text to append:\n%s\n", text_editor.user_input);
 				break;
 			}
@@ -587,20 +569,16 @@ int main() {
 				}
 				else text_editor.delete_(char_num, num_of_symb);
 
-				//printf("Done!\n");
-
 				break;
 			}
 			case 9: // Undo
 			{
-				//printf("The command 9 is not implemented\n");
 				text_editor.undo();
 				printf("Done!\n");
 				break;
 			}
 			case 10: // Redo
 			{
-				//printf("The command 9 is not implemented\n");
 				text_editor.redo();
 				printf("Done!\n");				
 				break;
@@ -665,15 +643,10 @@ int main() {
 				if (node_start_replacement == NULL) break;
 
 				text_editor.get_input("Enter text to replace (up to 100 characters):\n\n");
-				//text_editor.replace(node_start_replacement);
 				text_editor.replace(line_num, char_num);
 
 				break;
 			}
-			case 15:
-				text_editor.delete_all();
-				printf("Done!\n");
-				break;
 			case -1:
 				return 0;
 			default:
@@ -682,12 +655,9 @@ int main() {
 		}
 		if (command == 1 || command == 2 || command == 6 || command == 8 || command == 11 || command == 12 || command == 14)
 			text_editor.add_to_stack();
-		printf("\nPress enter to continue... ");
-		while (getchar() != '\n');
-		getchar();
-		//text_editor.clean_buffer();
+		printf("\nPress enter to continue... ");		
+		text_editor.clean_buffer();
 		system("cls");
-		//while (getchar() != '\n');
 	}
 	
 	
