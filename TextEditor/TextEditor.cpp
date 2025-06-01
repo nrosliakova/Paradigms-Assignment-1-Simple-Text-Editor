@@ -5,6 +5,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <stack>
 using namespace std;
 
 typedef struct node{
@@ -23,7 +24,9 @@ class TextEditor {
 	//node* p_last_chars;
 	node* last_char;
 	int line_counter = 0;
-
+	stack<char*> before;
+	stack<char*> after; 
+	int chars_counter = 0;
 	public:
 		char copied_text[100];
 		char user_input[100];
@@ -62,8 +65,29 @@ class TextEditor {
 			strcpy_s(user_input, text);
 		}
 
+		char* get_text() {
+			if (chars_counter == 0) {
+				char* text = (char*)malloc(sizeof(char));
+				text[0] = '\0';
+				return text;
+			}
+			char* text = (char*)malloc(chars_counter * sizeof(char));
+			
+			node cur_char = *p_first_chars[0];
+			int i = 0;
+			while (cur_char.value != NULL) {
+				text[i] = cur_char.value;
+				i++;
+				if (cur_char.next != NULL)
+					cur_char = *cur_char.next;
+				else break;
+			}
+			text[i] = '\0';
+			return text;
+		}
 		void append(const char text[]) {
 			int len = strlen(text);
+			chars_counter += len;
 			node* nodes = (node*)calloc(len + 1, sizeof(node));
 			if (last_char != NULL && last_char->value != NULL) {
 				last_char->next = &nodes[0];
@@ -84,9 +108,22 @@ class TextEditor {
 			}
 		}
 
+		void add_to_stack() {
+			char* text = get_text();
+			before.push(text);
+			//before_count++;
+
+			//while (after_count != 0) {
+			while (after.size() != 0) {
+				after.pop();
+				//after_count--;
+			}		
+		}
+
 		void new_line() {
 			append("\n");
 			line_counter++;
+			//chars_counter++;
 			if (line_counter > arraysize)
 				p_first_chars = resize();
 		}
@@ -110,6 +147,7 @@ class TextEditor {
 
 		node* insert(node* nd) {
 			int len = strlen(user_input);
+			chars_counter += len;
 			node* nodes = (node*)calloc(len + 1, sizeof(node));
 			node* prev_node = nd;
 			node* node_after_insert = nd->next;
@@ -131,6 +169,7 @@ class TextEditor {
 
 		void insert(int num_line) {
 			int len = strlen(user_input);
+			chars_counter += len;
 			node* nodes = (node*)calloc(len + 1, sizeof(node));
 			node* last_node = p_first_chars[num_line];
 			node* node_after_insert = p_first_chars[num_line];
@@ -149,22 +188,41 @@ class TextEditor {
 			last_node->next = node_after_insert;
 		}
 
-		node* replace(node* nd) {
+		/*node* replace(node* nd) {
 			int len = strlen(user_input);
 			node* cur_node_p = nd;
-
+			node* prev_node_p = nd;
 			for (int i = 0; i < len; i++) {
+				if (cur_node_p == NULL) {
+					cur_node_p = (node*)malloc(sizeof(node));
+					prev_node_p->next = cur_node_p;
+				}
 				cur_node_p->value = user_input[i];
+				prev_node_p = cur_node_p;
 				cur_node_p = cur_node_p->next;
 			}
 			return nd;
+		}*/
+		void replace(int num_line, int num_char) {
+			int num_of_symb = strlen(user_input);
+
+			if (num_line == 0) {
+				delete_(num_line, num_of_symb);
+				insert(num_line);
+			}
+			else {
+				node* nd_before = find_char(num_line, num_char - 1);
+				delete_(nd_before, num_of_symb);
+				insert(nd_before);
+			}
 		}
 
 		node* delete_(node* node_before, int num_of_symb) {
 			node* cur_node_p = node_before->next;
-
 			for (int i = 0; i < num_of_symb; i++) {
+				if (cur_node_p == NULL) break;
 				cur_node_p = cur_node_p->next;
+				chars_counter--;
 			}
 			node_before->next = cur_node_p;
 			return node_before;
@@ -180,9 +238,20 @@ class TextEditor {
 			for (int i = 0; i < num_of_symb; i++) {
 				if (cur_node_p == NULL) break;
 				cur_node_p = cur_node_p->next;
+				chars_counter--;
 			}
 			p_first_chars[num_line] = cur_node_p;
 			return p_first_chars[num_line];
+		}
+
+		void delete_all() {
+			delete p_first_chars;
+			p_first_chars = (node**)calloc(arraysize, sizeof(node));
+			for (int i = 0; i < arraysize; i++) {
+				p_first_chars[i] = NULL;
+			}
+
+			last_char = p_first_chars[0];
 		}
 
 		void copy(node* nd, int num_of_symb) {
@@ -215,6 +284,7 @@ class TextEditor {
 				}
 				text[i] = cur_node_p->value;
 				cur_node_p = cur_node_p->next;
+				chars_counter--;
 			}
 
 			strcpy_s(copied_text, text);
@@ -238,6 +308,7 @@ class TextEditor {
 				}
 				text[i] = cur_node_p->value;
 				cur_node_p = cur_node_p->next;
+				chars_counter--;
 			}
 
 			strcpy_s(copied_text, text);
@@ -357,6 +428,28 @@ class TextEditor {
 					cur_char = *cur_char.next;
 				else break;
 			}
+		}
+
+		void undo() {
+			if (before.size() == 1) return;
+
+			char* text = before.top();
+			before.pop();
+			after.push(text);
+			text = before.top();
+			delete_all();
+			append(text);
+		}
+		void redo() {
+			if (after.empty()) return;
+
+			char* text = after.top();
+			after.pop();
+			before.push(text);
+			//text = before.top();
+
+			delete_all();
+			append(text);
 		}
 
 		void clean_buffer() {
@@ -500,12 +593,16 @@ int main() {
 			}
 			case 9: // Undo
 			{
-				printf("The command 9 is not implemented\n");
+				//printf("The command 9 is not implemented\n");
+				text_editor.undo();
+				printf("Done!\n");
 				break;
 			}
 			case 10: // Redo
 			{
-				printf("The command 10 is not implemented\n");
+				//printf("The command 9 is not implemented\n");
+				text_editor.redo();
+				printf("Done!\n");				
 				break;
 			}
 			case 11: // Cut
@@ -568,16 +665,23 @@ int main() {
 				if (node_start_replacement == NULL) break;
 
 				text_editor.get_input("Enter text to replace (up to 100 characters):\n\n");
-				text_editor.replace(node_start_replacement);
+				//text_editor.replace(node_start_replacement);
+				text_editor.replace(line_num, char_num);
 
 				break;
 			}
+			case 15:
+				text_editor.delete_all();
+				printf("Done!\n");
+				break;
 			case -1:
 				return 0;
 			default:
 				printf("Error! The command '%d' does not exist.\n", command);
 				break;
 		}
+		if (command == 1 || command == 2 || command == 6 || command == 8 || command == 11 || command == 12 || command == 14)
+			text_editor.add_to_stack();
 		printf("\nPress enter to continue... ");
 		while (getchar() != '\n');
 		getchar();
