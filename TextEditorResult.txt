@@ -1,1 +1,1 @@
-rrrrr
+Hello, text editor!

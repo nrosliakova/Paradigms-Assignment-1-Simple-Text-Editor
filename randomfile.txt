@@ -1,5 +1,7 @@
-HIII
-use this code:
-3456789876
-
-The End!
+Pink
+Red
+Yellow
+Blue
+Purpule
+Maroon
+Banana
