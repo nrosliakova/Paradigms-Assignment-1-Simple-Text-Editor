@@ -16,7 +16,25 @@ typedef struct coordinates{
 	int index = NULL;
 } coordinates;
 
-class TextEditor {
+__interface ITextEditor
+{
+	void append(char* text = NULL);
+	void new_line();
+	void insert(char* text = NULL);
+	void replace();
+	void delete_(int num_of_symb);
+	tuple<node*, int> copy(int num_of_symb);
+	void cut(int num_of_symb);
+	void paste();
+	void search();
+	void print_text();
+	void load_from_file();
+	void save_to_file();
+	void undo();
+	void redo();
+};
+
+class TextEditor : public ITextEditor {
 	int arraysize = 4;
 
 	node** p_first_chars;
@@ -28,8 +46,8 @@ class TextEditor {
 	coordinates cursor;
 
 	public:
-		char* copied_text;
-		char* user_input;
+		char* copied_text = NULL;
+		char* user_input = NULL;
 
 		TextEditor() {
 			p_first_chars = (node**)calloc(arraysize, sizeof(node));
@@ -74,7 +92,6 @@ class TextEditor {
 				i++;
 			}
 			text[i] = '\0';
-			delete user_input;
 			user_input = text;
 		}
 
@@ -154,7 +171,7 @@ class TextEditor {
 			bool error_occurred = false;
 			for (int i = 1; i <= char_num; i++) {
 				if (nod->next == NULL) {
-					printf("Error, this character number does not exist yet. Last character number is %d.", i);
+					printf("Error, this character number does not exist yet. Last character number is %d.", i - 1);
 					return NULL;
 				}
 				nod = nod->next;
@@ -237,7 +254,6 @@ class TextEditor {
 				text[i] = cur_node_p->value;
 				cur_node_p = cur_node_p->next;
 			}
-			delete copied_text;
 			copied_text = text;	
 			return make_tuple(cur_node_p, i);
 		}
@@ -245,7 +261,6 @@ class TextEditor {
 		void cut(int num_of_symb) {
 			node* last_node;
 			tie(last_node, num_of_symb) = copy(num_of_symb);
-			if (last_node == NULL) return;
 			if(cursor.index == 0)
 				p_first_chars[cursor.line] = last_node;
 			else {
@@ -260,11 +275,19 @@ class TextEditor {
 		}
 
 		void search() {
+			if (chars_counter == 0) {
+				printf("\nYou did not write any text to search in.\n");
+				return;
+			}
 			node cur_char = *p_first_chars[0];
 			int coord_arr_size = 4;
 			coordinates* coord_arr = (coordinates*)calloc(coord_arr_size, sizeof(coordinates));
 			int el_counter = 0;
 			int len_ = strlen(user_input);
+			if (len_ == 0) {
+				printf("\nNo text to search.\n");
+				return;
+			} 
 			int i = 0;
 			int cur_line_num = 0;
 			int cur_char_num = 0;
@@ -381,6 +404,7 @@ class TextEditor {
 			text = before.top();
 
 			delete_all();
+			chars_counter = 0;
 			append(text);
 		}
 
@@ -444,21 +468,21 @@ int main() {
 			case 0: // Help 
 			{
 				printf(
-					" 1 - Append text to the end\n" // done 
-					" 2 - Start new line\n" // done 
-					" 3 - Save to file\n" // done
-					" 4 - Load from file\n" // done
-					" 5 - Print current text\n" // done
-					" 6 - Insert\n" // done
-					" 7 - Search\n" // done
-					" 8 - Delete\n" // done
-					" 9 - Undo\n" // done
-					"10 - Redo\n" // done
-					"11 - Cut\n" // done
-					"12 - Paste\n" // done
-					"13 - Copy\n" // done
-					"14 - Replace\n" // done
-					"14 - Set cursor\n" 
+					" 1 - Append text to the end\n" 
+					" 2 - Start new line\n" 
+					" 3 - Save to file\n" 
+					" 4 - Load from file\n"
+					" 5 - Print current text\n" 
+					" 6 - Insert\n" 
+					" 7 - Search\n" 
+					" 8 - Delete\n" 
+					" 9 - Undo\n" 
+					"10 - Redo\n" 
+					"11 - Cut\n" 
+					"12 - Paste\n"
+					"13 - Copy\n" 
+					"14 - Replace\n"
+					"15 - Set cursor\n"
 					"-1 - Exit\n" 
 				);
 				break;
@@ -579,9 +603,6 @@ int main() {
 		printf("\nPress enter to continue... ");
 		text_editor.clean_buffer();
 		system("cls");
-
-	}
-	
-	
+	}	
 	return 0;
 }
